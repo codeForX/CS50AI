@@ -93,7 +93,7 @@ def shortest_path(source, target):
     """
     path = []
     frontier = QueueFrontier()
-    frontier.add(Node(source,None,None))
+    frontier.add( Node(source,None,None) )
     explored_set = set()
     while not frontier.empty():
         highligtedNode = frontier.remove()
@@ -102,18 +102,13 @@ def shortest_path(source, target):
             while highligtedNode.parent != None:
                 path.append( [highligtedNode.action,highligtedNode.state] )
                 highligtedNode = highligtedNode.parent
-            print(path)
             path.reverse()
             return path
-                
-    
+
         for movieId, actorId in neighbors_for_person(highligtedNode.state):
             neighborNode = Node(actorId,highligtedNode,movieId)
             if neighborNode.state not in explored_set:
                 frontier.add(neighborNode)
-            # if neighbor not in explored_set:
-            #     frontier.add(neighbor,highligtedNode,None)
-    print(explored_set)
     return None
 
         
