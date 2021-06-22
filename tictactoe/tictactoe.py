@@ -3,6 +3,8 @@ Tic Tac Toe Player
 """
 
 import math
+from copy import deepcopy
+import random
 
 X = "X"
 O = "O"
@@ -24,7 +26,7 @@ def player(board):
     Returns player who has the next turn on a board.
     """
     countOfX = 0
-    countOfY = 0
+    countOfO = 0
     numRows = 3
     numColumns = 3
     for row in range(numRows):
@@ -32,8 +34,8 @@ def player(board):
             if board[row][column] == X:
                 countOfX += 1
             elif board[row][column] == O:
-                countOfY += 1
-    return X if countOfX == countOfY else O
+                countOfO += 1
+    return X if countOfX == countOfO else O
 
 
 def actions(board):
@@ -50,13 +52,11 @@ def actions(board):
     return actions
             
 
-
-
 def result(board, action):
     """
     Returns the board that results from making move (i, j) on the board.
     """
-    newBoard = list.copy(board)
+    newBoard = deepcopy(board)
     row,column = action
     if newBoard[row][column] == EMPTY:
         newBoard[row][column] = player(board)
@@ -81,11 +81,18 @@ def winner(board):
         if board[0][0] == board[1][1] == board[2][2] == symbol or board[0][2] == board[1][1] == board[2][0] == symbol :
             return symbol
 
+
 def terminal(board):
     """
     Returns True if game is over, False otherwise.
     """
-    return len(actions(board)) == 0
+    if len(actions(board)) == 0:
+        return True
+    elif winner(board) == X:
+        return True
+    elif winner(board) == O:
+        return True
+    return False
 
 
 def utility(board):
@@ -100,14 +107,49 @@ def utility(board):
     else:
         return 0
 
+
+def maxScore(board):
+    if terminal(board):
+        return utility(board)
+    highest = -(math.inf)
+    for action in actions(board):
+        highest = max(highest,minScore(result(board,action)))   
+    return highest
+
+
+def minScore(board):
+    """
+    calls the minScore function on every available action and gets the higest score
+    """
+    if terminal(board):
+        return utility(board)
+    lowest = math.inf
+    for action in actions(board):
+        lowest = min(lowest, maxScore(result(board,action)))
+    return lowest
+
+    
 def minimax(board):
     """
     Returns the optimal action for the current player on the board.
     """
-    raise NotImplementedError
+    if terminal(board):
+        return None 
+    if board == initial_state():
+        return (random.randint(0,2),random.randint(0,2))
 
-testBoard = [[O, O, X],
-            [X, X, O],
-            [O, O, X]]
-testAction = (0,2)
-print(utility(testBoard))
+    if player(board) == X:
+        highest = -(math.inf)
+        for action in actions(board):
+            score = minScore(result(board,action))
+            if score > highest:
+                highest = score
+                bestAction = action
+    else:
+        lowest = math.inf
+        for action in actions(board):
+            score = maxScore(result(board,action))
+            if score < lowest:
+                lowest = score
+                bestAction = action   
+    return bestAction
