@@ -105,27 +105,41 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        raise NotImplementedError
+        # completed by me 
+        if self.count == len(self.count):
+            return self.cells
+        else:
+            return set()
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        raise NotImplementedError
+        # completed by me
+        if self.count == 0:
+            return self.cells
+        else:
+            return set()
 
     def mark_mine(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
-        raise NotImplementedError
+        # completed by me
+        if cell in self.cells:
+            self.cells.remove(cell)
+            self.count -= 1
+
 
     def mark_safe(self, cell):
         """
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        raise NotImplementedError
+        # completed by me
+        if cell in self.cells:
+            self.cells.remove(cell)
 
 
 class MinesweeperAI():
@@ -154,6 +168,7 @@ class MinesweeperAI():
         Marks a cell as a mine, and updates all knowledge
         to mark that cell as a mine as well.
         """
+        # completed by me
         self.mines.add(cell)
         for sentence in self.knowledge:
             sentence.mark_mine(cell)
@@ -163,10 +178,78 @@ class MinesweeperAI():
         Marks a cell as safe, and updates all knowledge
         to mark that cell as safe as well.
         """
+        # completed by me
         self.safes.add(cell)
         for sentence in self.knowledge:
             sentence.mark_safe(cell)
 
+
+    def nearbyCells(self,cell):
+        """
+        Returns cells that are neighbors with a given cell 
+        while also ignoring any cells out of boundrys of the game.
+        """
+        # made by me
+        cells = set()
+        for i in range(cell[0] - 1, cell[0] + 2):
+            for j in range(cell[1] - 1, cell[1] + 2):
+                if  (i,j) == cell :
+                    continue
+                elif (i,j) in self.moves_made:
+                    continue
+                elif  i < 0 or j < 0 or i >= self.height or j >= self.width:
+                    continue
+                cells.add((i,j))
+        return cells
+
+
+    def updateKnowledgePool(self):
+        """
+        updates the knowledge base based on things
+        that could be infered from current knowledge
+        """
+        # made by me
+
+        def purgeTheEmpty():
+            """
+            gets rid of empty sentences from which nothing could be infered
+            to speed up the decisions
+            """
+            
+            knowledgeCopy = self.knowledge.copy()
+            for sentence in knowledgeCopy:
+                if sentence.cells == set():
+                    self.knowledge.remove(sentence)
+
+
+        def inferNewKnowledge(sentance1, sentance2):
+            """
+            Given two sentemces it infers a third and cuts out the other two
+            as thay are no longer needed.
+            (for some reason the sentences dissapear from the knowledge sometimes
+            but it dosent seem to affect program results.)
+            """
+            if sentance1 in  self.knowledge:
+                self.knowledge.remove(sentance1)
+            if sentance2 in  self.knowledge:
+                self.knowledge.remove(sentance2)
+            self.knowledge.append(Sentence(sentance1.cells - sentance2.cells, sentance1.count - sentance2.count))
+        
+        # remove already made moves.
+        for sentence in self.knowledge:
+            for move in self.moves_made:
+                if move in sentence.cells:
+                    sentence.cells.remove(move)
+
+        purgeTheEmpty()
+
+        knowledgeCopy = self.knowledge.copy()
+        for sentance1 in knowledgeCopy:
+            for sentance2 in knowledgeCopy:
+                if sentance1 != sentance2 :
+                    if  sentance2.cells.issubset(sentance1.cells) : 
+                        inferNewKnowledge(sentance1, sentance2)
+    
     def add_knowledge(self, cell, count):
         """
         Called when the Minesweeper board tells us, for a given
@@ -182,7 +265,27 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
-        raise NotImplementedError
+        # completed by me
+        self.moves_made.add(cell)
+
+        self.safes.add(cell)
+
+        cells = self.nearbyCells(cell)
+        self.knowledge.append(Sentence(cells,count))
+        print(self.knowledge[-1])
+
+        knowledgeCopy = self.knowledge.copy()
+        for sentence in knowledgeCopy:
+            if len(sentence.cells) == sentence.count:
+                for spot in sentence.cells.copy():
+                    self.mark_mine(spot)
+            elif sentence.count == 0:
+                for spot in sentence.cells.copy():
+                    self.mark_safe(spot)
+
+        self.updateKnowledgePool()
+        print(len(self.knowledge))
+
 
     def make_safe_move(self):
         """
@@ -193,7 +296,11 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
-        raise NotImplementedError
+        # completed by me
+        for cell in self.safes:
+            if cell not in self.moves_made:
+                return cell
+        return None
 
     def make_random_move(self):
         """
@@ -202,4 +309,11 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
-        raise NotImplementedError
+        # completed by me
+        availableMoves = []
+        for i in range(self.height):
+            for j in range(self.width):
+                availableMoves.append((i,j))
+        move = random.choice([move for move in availableMoves if move not in self.moves_made and move not in self.mines])
+        print(f"going to {move} wish me luck🤞")
+        return move
